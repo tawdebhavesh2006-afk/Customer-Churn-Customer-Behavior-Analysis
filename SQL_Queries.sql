@@ -1,0 +1,111 @@
+CREATE TABLE customers (
+    Customer_ID VARCHAR(50),
+    Signup_Date DATE,
+    Customer_Name VARCHAR(100),
+    Gender VARCHAR(20),
+    Age INT,
+    City VARCHAR(50),
+    State VARCHAR(50),
+    Customer_Segment VARCHAR(50),
+    Subscription_Plan VARCHAR(50),
+    Acquisition_Channel VARCHAR(50),
+    Total_Orders NUMERIC,
+    Average_Order_Value NUMERIC(10,2),
+    Total_Spend NUMERIC(12,2),
+    Last_Purchase_Date DATE,
+    Days_Since_Last_Purchase INT,
+    Monthly_Logins NUMERIC,
+    Email_Open_Rate NUMERIC(5,2),
+    Support_Tickets NUMERIC,
+    Returns NUMERIC,
+    Satisfaction_Score NUMERIC(3,1),
+    Discount_Usage_Rate NUMERIC(5,2),
+    Customer_Status VARCHAR(50),
+    Churn_Flag INT
+);
+SELECT * FROM CUSTOMERS
+
+1.Find total number of customers.
+SELECT 
+COUNT(CUSTOMER_ID) 
+AS TOTAL_CUSTOMER
+FROM CUSTOMERS
+
+2.Find total spending and average spending.
+SELECT
+SUM(TOTAL_SPEND) 
+AS TOTAL_SPENDING,
+AVG(TOTAL_SPEND) 
+AS AVERAGE_SPENDING
+FROM CUSTOMERS
+
+3.Find customers whose spending is above the average customer spending.
+SELECT CUSTOMER_NAME,
+SUM(TOTAL_SPEND) AS TOTAL_SPENDING
+FROM CUSTOMERS
+GROUP BY CUSTOMER_NAME
+HAVING SUM(TOTAL_SPEND)>( SELECT AVG(TOTAL) FROM
+(
+SELECT CUSTOMER_NAME,
+SUM(TOTAL_SPEND) AS TOTAL
+FROM CUSTOMERS
+GROUP BY CUSTOMER_NAME) as TOTAL2)
+
+4.Find the Top 10 customers by spending.
+SELECT
+CUSTOMER_NAME,
+MAX(TOTAL_SPEND) AS HIGHEST_SPEND
+FROM CUSTOMERS
+GROUP BY CUSTOMER_NAME
+ORDER BY MAX(TOTAL_SPEND)  DESC
+LIMIT 10
+
+5.Find average spending by customer segment.
+SELECT
+CUSTOMER_SEGMENT,
+AVG(TOTAL_SPEND) AS AVERAGE_SPENDING
+FROM CUSTOMERS
+GROUP BY CUSTOMER_SEGMENT
+
+SELECT * FROM CUSTOMERS
+
+6.Find the number of Churned, Active and At-Risk customers.
+SELECT
+CUSTOMER_STATUS,
+COUNT(CUSTOMER_ID) AS TOTAL_CUSTOMER
+FROM  CUSTOMERS
+GROUP BY CUSTOMER_STATUS
+
+7.Calculate overall Churn Rate.
+WITH CHURNED AS (
+SELECT COUNT(CUSTOMER_ID) AS CHURNED_CUSTOMERS
+FROM CUSTOMERS
+WHERE CUSTOMER_STATUS = 'Churned'
+)
+SELECT 
+CHURNED_CUSTOMERS * 100.0 / (SELECT COUNT(CUSTOMER_ID) FROM CUSTOMERS) AS CHURN_RATE
+FROM CHURNED;
+
+8.Rank customers by spending using RANK().
+SELECT 
+    CUSTOMER_NAME,
+    TOTAL_SPEND,
+    RANK() OVER(
+        ORDER BY TOTAL_SPEND DESC
+    ) AS RANKING
+FROM CUSTOMERS;
+
+9.Find Top 3 customers in each Customer Segment using PARTITION BY.
+SELECT *
+FROM (
+SELECT
+CUSTOMER_SEGMENT,
+CUSTOMER_NAME,
+TOTAL_SPEND,
+RANK() OVER (
+PARTITION BY CUSTOMER_SEGMENT
+ORDER BY TOTAL_SPEND DESC
+) AS RANKING
+FROM CUSTOMERS
+) AS ranked_customers
+WHERE RANKING <= 3;
